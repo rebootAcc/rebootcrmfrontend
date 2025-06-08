@@ -14,12 +14,12 @@ const DashboardEmployeeSection = () => {
   const navigate = useNavigate();
 
   const [dateRange, setDateRange] = useState({
-    startDate: null,
-    endDate: null,
+    startDate: new Date(),
+    endDate: new Date(),
     key: "selection",
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isDateFilterApplied, setIsDateFilterApplied] = useState(false);
+  const [isDateFilterApplied, setIsDateFilterApplied] = useState(true);
 
   const fetchEmployeeData = async () => {
     try {
