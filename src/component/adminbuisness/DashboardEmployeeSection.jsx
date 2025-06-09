@@ -6,20 +6,108 @@ import { DateRangePicker } from "react-date-range";
 import "react-date-range/dist/styles.css"; // Import date picker styles
 import "react-date-range/dist/theme/default.css"; // Import theme styles
 import { format, isSameDay, startOfDay, endOfDay } from "date-fns";
+import Modal from "react-modal";
+import { Link } from "react-router-dom";
 
 const DashboardEmployeeSection = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [modalData, setModalData] = useState([]);
 
   const navigate = useNavigate();
 
   const [dateRange, setDateRange] = useState({
-    startDate: null,
-    endDate: null,
+    startDate: new Date(),
+    endDate: new Date(),
     key: "selection",
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isDateFilterApplied, setIsDateFilterApplied] = useState(false);
+  const [isDateFilterApplied, setIsDateFilterApplied] = useState(true);
+
+  const fetchEmployeeBusinessData = async (role, id, status, dateRange) => {
+    try {
+      let url = "";
+      if (role === "telecaller") {
+        url = `${
+          import.meta.env.VITE_BASE_URL
+        }/api/business/get?telecallerId=${id}&status=${status}&followupstartdate=${
+          dateRange.startDate
+            ? new Date(
+                dateRange.startDate.getTime() -
+                  dateRange.startDate.getTimezoneOffset() * 60000
+              ).toISOString()
+            : ""
+        }&followupenddate=${
+          dateRange.endDate
+            ? new Date(
+                dateRange.endDate.getTime() -
+                  dateRange.endDate.getTimezoneOffset() * 60000
+              ).toISOString()
+            : ""
+        }`;
+      } else if (role === "digitalmarketer") {
+        url = `${
+          import.meta.env.VITE_BASE_URL
+        }/api/business/get?digitalMarketerId=${id}&status=${status}&category=${category}&followupstartdate=${
+          dateRange.startDate
+            ? new Date(
+                dateRange.startDate.getTime() -
+                  dateRange.startDate.getTimezoneOffset() * 60000
+              ).toISOString()
+            : ""
+        }&followupenddate=${
+          dateRange.endDate
+            ? new Date(
+                dateRange.endDate.getTime() -
+                  dateRange.endDate.getTimezoneOffset() * 60000
+              ).toISOString()
+            : ""
+        }`;
+      } else if (role === "bde") {
+        url = `${
+          import.meta.env.VITE_BASE_URL
+        }/api/business/get?bdeId=${id}&byTagAppointment=true&status=${status}&appointmentstartdate=${
+          dateRange.startDate
+            ? new Date(
+                dateRange.startDate.getTime() -
+                  dateRange.startDate.getTimezoneOffset() * 60000
+              ).toISOString()
+            : ""
+        }&appointmentenddate=${
+          dateRange.endDate
+            ? new Date(
+                dateRange.endDate.getTime() -
+                  dateRange.endDate.getTimezoneOffset() * 60000
+              ).toISOString()
+            : ""
+        }`;
+      }
+
+      const response = await axios.get(url);
+      console.log(response.data.businesses);
+      setModalData(response.data.businesses);
+    } catch (error) {
+      console.error("Error fetching business data:", error);
+    }
+  };
+
+  const openModal = (emp, openFor) => {
+    setSelectedEmployee(emp);
+    fetchEmployeeBusinessData(
+      emp.role.toLowerCase(),
+      emp.telecallerId ?? emp.bdeId ?? emp.digitalMarketerId,
+      openFor,
+      dateRange
+    );
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedEmployee(null);
+    setIsModalOpen(false);
+  };
 
   const fetchEmployeeData = async () => {
     try {
@@ -174,7 +262,7 @@ const DashboardEmployeeSection = () => {
     "Employee Name",
     "Role",
     "Total Data",
-    "Appintments",
+    "Appointments",
     "Followup",
     "Deal Close",
     "Target",
@@ -280,13 +368,22 @@ const DashboardEmployeeSection = () => {
                   <div className="flex-1">{employee.name}</div>
                   <div className="flex-1">{employee.role}</div>
                   <div className="flex-1">{employee.totalCount || "0"}</div>
-                  <div className="flex-1">
+                  <div
+                    className="flex-1"
+                    onClick={() => openModal(employee, "Appointment Pending")}
+                  >
                     {employee.statuscount?.visitCount || "0"}
                   </div>
-                  <div className="flex-1">
+                  <div
+                    className="flex-1"
+                    onClick={() => openModal(employee, "Followup  ")}
+                  >
                     {employee.statuscount?.FollowupCount || "0"}
                   </div>
-                  <div className="flex-1">
+                  <div
+                    className="flex-1"
+                    onClick={() => openModal(employee, "Deal Closed")}
+                  >
                     {employee.statuscount?.dealCloseCount || "0"}
                   </div>
 
@@ -312,6 +409,48 @@ const DashboardEmployeeSection = () => {
           )}
         </div>
       </div>
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        contentLabel="Add Business Modal"
+        className="modal-content"
+        overlayClassName="modal-overlay"
+      >
+        <button onClick={closeModal} className="close-button">
+          &times;
+        </button>
+        {modalData && modalData.length > 0 ? (
+          modalData.slice(0, 3).map((data) => (
+            <div
+              className="flex flex-col gap-2 p-2 border border-slate-500"
+              key={data._id}
+            >
+              <div className="flex items-center justify-between gap-6">
+                <h3 className="text-gray-900 font-medium">Business Name</h3>
+                <h5 className="text-gray-700">{data.buisnessname}</h5>
+              </div>
+              <div className="flex items-center justify-between gap-6">
+                <h3 className="text-gray-900 font-medium">Category</h3>
+                <h5 className="text-gray-700">{data.category}</h5>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="flex gap-2 p-2 items-center justify-center font-semibold text-lg">
+            <h1>No Data Found</h1>
+          </div>
+        )}
+        <Link
+          to={`/employee-details/${selectedEmployee?.role.toLowerCase()}/${
+            selectedEmployee?.telecallerId ??
+            selectedEmployee?.bdeId ??
+            selectedEmployee?.digitalMarketerId
+          }`}
+          className={`text-blue-600 underline float-right mt-4`}
+        >
+          {modalData.length > 0 ? "View More" : "View All"}
+        </Link>
+      </Modal>
     </div>
   );
 };
