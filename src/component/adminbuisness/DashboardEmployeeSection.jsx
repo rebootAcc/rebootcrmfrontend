@@ -8,6 +8,19 @@ import "react-date-range/dist/theme/default.css"; // Import theme styles
 import { format, isSameDay, startOfDay, endOfDay } from "date-fns";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
+import { GoDotFill } from "react-icons/go";
+
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const options = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  return new Date(dateString).toLocaleDateString("en-GB", options) + " ";
+};
 
 const DashboardEmployeeSection = () => {
   const [data, setData] = useState([]);
@@ -419,27 +432,61 @@ const DashboardEmployeeSection = () => {
         <button onClick={closeModal} className="close-button">
           &times;
         </button>
-        {modalData && modalData.length > 0 ? (
-          modalData.slice(0, 3).map((data) => (
-            <div
-              className="flex flex-col gap-2 p-2 border border-slate-500"
-              key={data._id}
-            >
-              <div className="flex items-center justify-between gap-6">
-                <h3 className="text-gray-900 font-medium">Business Name</h3>
-                <h5 className="text-gray-700">{data.buisnessname}</h5>
+        <div className="grid grid-cols-3 place-items-stretch gap-4">
+          {modalData && modalData.length > 0 ? (
+            modalData.map((data) => (
+              <div
+                key={data._id}
+                className="bg-white text-[#2F2C49] w-full rounded-lg border border-[#CCCCCC] text-sm font-medium flex justify-between p-4"
+              >
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex justify-between w-full items-center">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        <GoDotFill />
+                      </span>
+                      <span className="line-clamp-2">{data.buisnessname}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>
+                      <GoDotFill />
+                    </span>
+                    <a href={`tel:${data.mobileNumber}`}>{data.mobileNumber}</a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>
+                      <GoDotFill />
+                    </span>
+                    <span>
+                      {data.status} - ({formatDate(data.followUpDate ?? "")})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>
+                      <GoDotFill />
+                    </span>
+                    <span>{data.category}</span>
+                  </div>
+                  <div className="flex  justify-between w-full items-center ">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <span>
+                          <GoDotFill />
+                        </span>
+                        <span>{data.city}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-between gap-6">
-                <h3 className="text-gray-900 font-medium">Category</h3>
-                <h5 className="text-gray-700">{data.category}</h5>
-              </div>
+            ))
+          ) : (
+            <div className="flex gap-2 p-2 items-center justify-center font-semibold text-lg">
+              <h1>No Data Found</h1>
             </div>
-          ))
-        ) : (
-          <div className="flex gap-2 p-2 items-center justify-center font-semibold text-lg">
-            <h1>No Data Found</h1>
-          </div>
-        )}
+          )}
+        </div>
         <Link
           to={`/employee-details/${selectedEmployee?.role.toLowerCase()}/${
             selectedEmployee?.telecallerId ??
